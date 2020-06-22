@@ -1,19 +1,17 @@
-use crate::adl::protocol::{Protocol,Request};
-use serde::{Serialize};
-use serde::de::{DeserializeOwned};
-use serde_json;
-use heapless::{Vec, consts::*};
-use serialport::SerialPort;
+use crate::adl::protocol::{Protocol, Request};
 use byteorder::ByteOrder;
-use std::convert::TryInto;
-use std::mem::size_of;
-use std::error::Error;
 use fletcher::Fletcher16;
+use heapless::{consts::*, Vec};
+use serde::de::DeserializeOwned;
+use serde::Serialize;
+use serde_json;
+use serialport::SerialPort;
+use std::convert::TryInto;
+use std::error::Error;
+use std::mem::size_of;
 
-
-const STX : u8 = 2;
-const ETX : u8 = 3;
-
+const STX: u8 = 2;
+const ETX: u8 = 3;
 
 type CmdResult<T> = Result<T, Box<dyn Error>>;
 
@@ -25,14 +23,19 @@ pub fn execute_str(sport: &mut Box<dyn SerialPort>, name: &str, reqstr: &str) ->
     }
 }
 
-fn execute<I,O>(sport: &mut Box<dyn SerialPort>, req: &Request<I,O>, reqstr: &str) -> CmdResult<()>
-  where I: DeserializeOwned + Serialize,
-        O: DeserializeOwned + Serialize {
-
-    let req_value : I = serde_json::from_str(reqstr)?;
+fn execute<I, O>(
+    sport: &mut Box<dyn SerialPort>,
+    req: &Request<I, O>,
+    reqstr: &str,
+) -> CmdResult<()>
+where
+    I: DeserializeOwned + Serialize,
+    O: DeserializeOwned + Serialize,
+{
+    let req_value: I = serde_json::from_str(reqstr)?;
     write_request(sport, req, &req_value)?;
 
-    let resp_value : O = read_response(sport, req)?;
+    let resp_value: O = read_response(sport, req)?;
     format!("result = {}", serde_json::to_string(&resp_value)?);
     Result::Ok(())
 }
@@ -41,16 +44,22 @@ const REQ_HEADER_SIZE: usize = size_of::<u8>() + 2 * size_of::<u16>();
 const REQ_TAIL_SIZE: usize = size_of::<u8>() + 2 * size_of::<u16>();
 type MaxValueSize = U11;
 
-fn write_request<I, O>(sport: &mut Box<dyn SerialPort>, req: &Request<I,O>, req_value: &I) -> CmdResult<()>
-where I: DeserializeOwned + Serialize {
+fn write_request<I, O>(
+    sport: &mut Box<dyn SerialPort>,
+    req: &Request<I, O>,
+    req_value: &I,
+) -> CmdResult<()>
+where
+    I: DeserializeOwned + Serialize,
+{
     let req_bytes: Vec<u8, MaxValueSize> = postcard::to_vec(&req_value)?;
 
-    let mut req_header: [u8;REQ_HEADER_SIZE] = [0;REQ_HEADER_SIZE];
+    let mut req_header: [u8; REQ_HEADER_SIZE] = [0; REQ_HEADER_SIZE];
     req_header[0] = STX;
     byteorder::LittleEndian::write_u16(&mut req_header[1..3], req.reqid);
-    byteorder::LittleEndian::write_u16(&mut req_header[3..5], req_bytes.len().try_into().unwrap() );
+    byteorder::LittleEndian::write_u16(&mut req_header[3..5], req_bytes.len().try_into().unwrap());
 
-    let mut req_tail: [u8;REQ_TAIL_SIZE] = [0;REQ_TAIL_SIZE];
+    let mut req_tail: [u8; REQ_TAIL_SIZE] = [0; REQ_TAIL_SIZE];
     let mut checksum = Fletcher16::new();
     // We checksum the reqid and body
     checksum.update(req_header[1..3].try_into().unwrap());
@@ -68,34 +77,36 @@ where I: DeserializeOwned + Serialize {
 const RESP_HEADER_SIZE: usize = size_of::<u8>() + size_of::<u16>();
 const RESP_TAIL_SIZE: usize = size_of::<u8>() + size_of::<u16>();
 
-fn read_response<I, O>(sport: &mut Box<dyn SerialPort>, _req: &Request<I,O>) -> CmdResult<O>
-  where O: DeserializeOwned {
-
-    let mut req_header: [u8;RESP_HEADER_SIZE] = [0;RESP_HEADER_SIZE];
+fn read_response<I, O>(sport: &mut Box<dyn SerialPort>, _req: &Request<I, O>) -> CmdResult<O>
+where
+    O: DeserializeOwned,
+{
+    let mut req_header: [u8; RESP_HEADER_SIZE] = [0; RESP_HEADER_SIZE];
     sport.read_exact(&mut req_header)?;
     if req_header[0] != STX {
-        return Result::Err(app_error("missing stx"))
+        return Result::Err(app_error("missing stx"));
     }
 
     let mut req_bytes: Vec<u8, MaxValueSize> = Vec::new();
     let size = byteorder::LittleEndian::read_u16(&req_header[1..3]);
-    req_bytes.resize_default(size.try_into()?).expect("buffer too small");
+    req_bytes
+        .resize_default(size.try_into()?)
+        .expect("buffer too small");
     sport.read_exact(&mut req_bytes)?;
 
-    let mut req_tail: [u8;RESP_TAIL_SIZE] = [0;RESP_TAIL_SIZE];
+    let mut req_tail: [u8; RESP_TAIL_SIZE] = [0; RESP_TAIL_SIZE];
     sport.read_exact(&mut req_tail)?;
     if req_tail[2] != ETX {
-        return Result::Err(app_error("missing etx"))
+        return Result::Err(app_error("missing etx"));
     }
     let mut checksum = Fletcher16::new();
     checksum.update(&req_bytes);
-    if checksum.value() !=  byteorder::LittleEndian::read_u16(&req_header[0..2]) {
-        return Result::Err(app_error("incorrect checksum"))
+    if checksum.value() != byteorder::LittleEndian::read_u16(&req_header[0..2]) {
+        return Result::Err(app_error("incorrect checksum"));
     }
-    let (req_value,_) = postcard::take_from_bytes(&req_bytes)?;
+    let (req_value, _) = postcard::take_from_bytes(&req_bytes)?;
     Result::Ok(req_value)
 }
-
 
 fn app_error(msg: &str) -> Box<dyn Error> {
     Box::new(std::io::Error::new(std::io::ErrorKind::Other, msg))
