@@ -19,6 +19,11 @@ pub fn execute_str(sport: &mut Box<dyn SerialPort>, name: &str, reqstr: &str) ->
     let protocol: Protocol = Protocol::new();
     match name {
         "getServo1" => execute(sport, &protocol.get_servo_1, reqstr),
+        "getServo2" => execute(sport, &protocol.get_servo_2, reqstr),
+        "getLed1" => execute(sport, &protocol.get_led_1, reqstr),
+        "setServo1" => execute(sport, &protocol.set_servo_1, reqstr),
+        "setServo2" => execute(sport, &protocol.set_servo_2, reqstr),
+        "setLed1" => execute(sport, &protocol.set_led_1, reqstr),
         _ => Result::Err(app_error("Unknown command")),
     }
 }
