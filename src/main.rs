@@ -35,7 +35,7 @@ fn main() {
       if let (Some(name),Some(value)) = (sub_m.value_of("name"), sub_m.value_of("value")) {
         match commands::execute_str(&mut sport, name, value) {
           Result::Ok(_)  => (),
-          Result::Err(msg)  => println!("Error: {}", msg),
+          Result::Err(err)  => println!("Error: {}", err),
         }
       }
     },
