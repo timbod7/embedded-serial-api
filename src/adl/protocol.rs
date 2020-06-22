@@ -13,11 +13,11 @@ pub struct Request<I, O> {
 
   pub name: String,
 
-  pub reqid: u32,
+  pub reqid: u16,
 }
 
 impl<I, O> Request<I, O> {
-  pub fn new(name: String, reqid: u32) -> Request<I, O> {
+  pub fn new(name: String, reqid: u16) -> Request<I, O> {
     Request {
       itype: Request::<I, O>::def_itype(),
       otype: Request::<I, O>::def_otype(),
@@ -75,26 +75,26 @@ impl Protocol {
   }
 
   pub fn def_get_servo_1() -> Request<(), u8> {
-    Request::<(), u8>{itype : std::marker::PhantomData, otype : std::marker::PhantomData, name : "getServo1".to_string(), reqid : 1_u32}
+    Request::<(), u8>{itype : std::marker::PhantomData, otype : std::marker::PhantomData, name : "getServo1".to_string(), reqid : 1_u16}
   }
 
   pub fn def_get_servo_2() -> Request<(), u8> {
-    Request::<(), u8>{itype : std::marker::PhantomData, otype : std::marker::PhantomData, name : "getServo2".to_string(), reqid : 2_u32}
+    Request::<(), u8>{itype : std::marker::PhantomData, otype : std::marker::PhantomData, name : "getServo2".to_string(), reqid : 2_u16}
   }
 
   pub fn def_get_led_1() -> Request<(), bool> {
-    Request::<(), bool>{itype : std::marker::PhantomData, otype : std::marker::PhantomData, name : "getLed1".to_string(), reqid : 3_u32}
+    Request::<(), bool>{itype : std::marker::PhantomData, otype : std::marker::PhantomData, name : "getLed1".to_string(), reqid : 3_u16}
   }
 
   pub fn def_set_servo_1() -> Request<u8, ()> {
-    Request::<u8, ()>{itype : std::marker::PhantomData, otype : std::marker::PhantomData, name : "setServo1".to_string(), reqid : 4_u32}
+    Request::<u8, ()>{itype : std::marker::PhantomData, otype : std::marker::PhantomData, name : "setServo1".to_string(), reqid : 4_u16}
   }
 
   pub fn def_set_servo_2() -> Request<u8, ()> {
-    Request::<u8, ()>{itype : std::marker::PhantomData, otype : std::marker::PhantomData, name : "setServo2".to_string(), reqid : 5_u32}
+    Request::<u8, ()>{itype : std::marker::PhantomData, otype : std::marker::PhantomData, name : "setServo2".to_string(), reqid : 5_u16}
   }
 
   pub fn def_set_led_1() -> Request<bool, ()> {
-    Request::<bool, ()>{itype : std::marker::PhantomData, otype : std::marker::PhantomData, name : "setLed1".to_string(), reqid : 6_u32}
+    Request::<bool, ()>{itype : std::marker::PhantomData, otype : std::marker::PhantomData, name : "setLed1".to_string(), reqid : 6_u16}
   }
 }
