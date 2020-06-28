@@ -8,8 +8,8 @@ cd $ROOTDIR
 
 $ADLC rust \
   --searchdir adl \
-  --outputdir src \
-  --manifest src/.adl-manifest \
+  --outputdir cli-client/src \
+  --manifest cli-client/src/.adl-manifest \
   --package adl \
   --runtime-module adlrt \
   --generate-transitive \
