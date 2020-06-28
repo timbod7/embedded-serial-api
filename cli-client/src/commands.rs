@@ -6,22 +6,21 @@ use serde::de::DeserializeOwned;
 use serde::Serialize;
 use serde_json;
 use serialport::SerialPort;
+use std::collections::HashMap;
 use std::convert::TryInto;
 use std::error::Error;
-use std::collections::HashMap;
 use std::mem::size_of;
 
 const STX: u8 = 2;
 const ETX: u8 = 3;
 
-
 type CmdResult<T> = Result<T, Box<dyn Error>>;
 type SPort = Box<dyn SerialPort>;
 
-type CmdMap =  HashMap<String, Box<dyn Fn(&mut SPort, &str) -> CmdResult<()>>>;
+type CmdMap = HashMap<String, Box<dyn Fn(&mut SPort, &str) -> CmdResult<()>>>;
 
 pub struct Commands {
-    commands : CmdMap
+    commands: CmdMap,
 }
 
 impl Commands {
@@ -30,41 +29,40 @@ impl Commands {
 
         // TODO: It would be nice to abstract the following via a helper function,
         // but that is currently beyond my rust capabilities.
-        let req =  Protocol::def_get_led_1();
-        commands.insert(req.name.clone(), Box::new(move |sport, valuestr| {
-            execute(sport, &req, valuestr)
-        }));
-        let req =  Protocol::def_set_led_1();
-        commands.insert(req.name.clone(), Box::new(move |sport, valuestr| {
-            execute(sport, &req, valuestr)
-        }));
-        let req =  Protocol::def_get_led_2();
-        commands.insert(req.name.clone(), Box::new(move |sport, valuestr| {
-            execute(sport, &req, valuestr)
-        }));
-        let req =  Protocol::def_set_led_2();
-        commands.insert(req.name.clone(), Box::new(move |sport, valuestr| {
-            execute(sport, &req, valuestr)
-        }));
+        let req = Protocol::def_get_led_1();
+        commands.insert(
+            req.name.clone(),
+            Box::new(move |sport, valuestr| execute(sport, &req, valuestr)),
+        );
+        let req = Protocol::def_set_led_1();
+        commands.insert(
+            req.name.clone(),
+            Box::new(move |sport, valuestr| execute(sport, &req, valuestr)),
+        );
+        let req = Protocol::def_get_led_2();
+        commands.insert(
+            req.name.clone(),
+            Box::new(move |sport, valuestr| execute(sport, &req, valuestr)),
+        );
+        let req = Protocol::def_set_led_2();
+        commands.insert(
+            req.name.clone(),
+            Box::new(move |sport, valuestr| execute(sport, &req, valuestr)),
+        );
         Commands {
-            commands: HashMap::new()
+            commands: HashMap::new(),
         }
     }
 
-    pub fn execute_str(& self, sport: &mut SPort, name: &str, reqstr: &str) -> CmdResult<()> {
+    pub fn execute_str(&self, sport: &mut SPort, name: &str, reqstr: &str) -> CmdResult<()> {
         match self.commands.get(name) {
             Option::None => Result::Err(app_error("Unknown command")),
-            Option::Some(cmdf) => cmdf(sport, reqstr)
+            Option::Some(cmdf) => cmdf(sport, reqstr),
         }
     }
 }
 
-
-fn execute<I, O>(
-    sport: &mut SPort,
-    req: &Request<I, O>,
-    reqstr: &str,
-) -> CmdResult<()>
+fn execute<I, O>(sport: &mut SPort, req: &Request<I, O>, reqstr: &str) -> CmdResult<()>
 where
     I: DeserializeOwned + Serialize,
     O: DeserializeOwned + Serialize,
@@ -81,11 +79,7 @@ const REQ_HEADER_SIZE: usize = size_of::<u8>() + 2 * size_of::<u16>();
 const REQ_TAIL_SIZE: usize = size_of::<u8>() + 2 * size_of::<u16>();
 type MaxValueSize = U11;
 
-fn write_request<I, O>(
-    sport: &mut SPort,
-    req: &Request<I, O>,
-    req_value: &I,
-) -> CmdResult<()>
+fn write_request<I, O>(sport: &mut SPort, req: &Request<I, O>, req_value: &I) -> CmdResult<()>
 where
     I: DeserializeOwned + Serialize,
 {
