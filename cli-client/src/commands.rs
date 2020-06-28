@@ -34,23 +34,15 @@ impl Commands {
         commands.insert(req.name.clone(), Box::new(move |sport, valuestr| {
             execute(sport, &req, valuestr)
         }));
-        let req =  Protocol::def_get_servo_1();
-        commands.insert(req.name.clone(), Box::new(move |sport, valuestr| {
-            execute(sport, &req, valuestr)
-        }));
-        let req =  Protocol::def_get_servo_2();
-        commands.insert(req.name.clone(), Box::new(move |sport, valuestr| {
-            execute(sport, &req, valuestr)
-        }));
         let req =  Protocol::def_set_led_1();
         commands.insert(req.name.clone(), Box::new(move |sport, valuestr| {
             execute(sport, &req, valuestr)
         }));
-        let req =  Protocol::def_set_servo_1();
+        let req =  Protocol::def_get_led_2();
         commands.insert(req.name.clone(), Box::new(move |sport, valuestr| {
             execute(sport, &req, valuestr)
         }));
-        let req =  Protocol::def_set_servo_2();
+        let req =  Protocol::def_set_led_2();
         commands.insert(req.name.clone(), Box::new(move |sport, valuestr| {
             execute(sport, &req, valuestr)
         }));

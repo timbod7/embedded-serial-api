@@ -8,12 +8,10 @@ struct Request<I,O> {
 };
 
 struct Protocol {
-   Request<Void, Word8> getServo1 = {"name": "getServo1", "reqid" : 1};
-   Request<Void, Word8> getServo2 = {"name": "getServo2", "reqid" : 2};
-   Request<Void, Bool>  getLed1   = {"name": "getLed1", "reqid" : 3};
+   Request<Void, Bool>  getLed1   = {"name": "getLed1", "reqid" : 1};
+   Request<Bool, Void>  setLed1   = {"name": "setLed1", "reqid" : 2};
 
-   Request<Word8, Void> setServo1 = {"name": "setServo1", "reqid" : 4};
-   Request<Word8, Void> setServo2 = {"name": "setServo2", "reqid" : 5};
-   Request<Bool, Void>  setLed1   = {"name": "setLed1", "reqid" : 6};
+   Request<Void, Bool>  getLed2   = {"name": "getLed1", "reqid" : 1};
+   Request<Bool, Void>  setLed2   = {"name": "setLed1", "reqid" : 2};
 };
 };
