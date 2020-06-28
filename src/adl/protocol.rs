@@ -3,7 +3,7 @@
 use serde::Deserialize;
 use serde::Serialize;
 
-#[derive(Deserialize,Eq,Hash,PartialEq,Serialize)]
+#[derive(Clone,Deserialize,Eq,Hash,PartialEq,Serialize)]
 pub struct Request<I, O> {
   #[serde(default="Request::<I, O>::def_itype")]
   pub itype: std::marker::PhantomData<I>,
@@ -35,7 +35,7 @@ impl<I, O> Request<I, O> {
   }
 }
 
-#[derive(Deserialize,Eq,Hash,PartialEq,Serialize)]
+#[derive(Clone,Deserialize,Eq,Hash,PartialEq,Serialize)]
 pub struct Protocol {
   #[serde(default="Protocol::def_get_servo_1")]
   #[serde(rename="getServo1")]

@@ -8,28 +8,68 @@ use serde_json;
 use serialport::SerialPort;
 use std::convert::TryInto;
 use std::error::Error;
+use std::collections::HashMap;
 use std::mem::size_of;
 
 const STX: u8 = 2;
 const ETX: u8 = 3;
 
-type CmdResult<T> = Result<T, Box<dyn Error>>;
 
-pub fn execute_str(sport: &mut Box<dyn SerialPort>, name: &str, reqstr: &str) -> CmdResult<()> {
-    let protocol: Protocol = Protocol::new();
-    match name {
-        "getServo1" => execute(sport, &protocol.get_servo_1, reqstr),
-        "getServo2" => execute(sport, &protocol.get_servo_2, reqstr),
-        "getLed1" => execute(sport, &protocol.get_led_1, reqstr),
-        "setServo1" => execute(sport, &protocol.set_servo_1, reqstr),
-        "setServo2" => execute(sport, &protocol.set_servo_2, reqstr),
-        "setLed1" => execute(sport, &protocol.set_led_1, reqstr),
-        _ => Result::Err(app_error("Unknown command")),
+type CmdResult<T> = Result<T, Box<dyn Error>>;
+type SPort = Box<dyn SerialPort>;
+
+type CmdMap =  HashMap<String, Box<dyn Fn(&mut SPort, &str) -> CmdResult<()>>>;
+
+pub struct Commands {
+    commands : CmdMap
+}
+
+impl Commands {
+    pub fn new() -> Commands {
+        let mut commands: CmdMap = HashMap::new();
+
+        // TODO: It would be nice to abstract the following via a helper function,
+        // but that is currently beyond my rust capabilities.
+        let req =  Protocol::def_get_led_1();
+        commands.insert(req.name.clone(), Box::new(move |sport, valuestr| {
+            execute(sport, &req, valuestr)
+        }));
+        let req =  Protocol::def_get_servo_1();
+        commands.insert(req.name.clone(), Box::new(move |sport, valuestr| {
+            execute(sport, &req, valuestr)
+        }));
+        let req =  Protocol::def_get_servo_2();
+        commands.insert(req.name.clone(), Box::new(move |sport, valuestr| {
+            execute(sport, &req, valuestr)
+        }));
+        let req =  Protocol::def_set_led_1();
+        commands.insert(req.name.clone(), Box::new(move |sport, valuestr| {
+            execute(sport, &req, valuestr)
+        }));
+        let req =  Protocol::def_set_servo_1();
+        commands.insert(req.name.clone(), Box::new(move |sport, valuestr| {
+            execute(sport, &req, valuestr)
+        }));
+        let req =  Protocol::def_set_servo_2();
+        commands.insert(req.name.clone(), Box::new(move |sport, valuestr| {
+            execute(sport, &req, valuestr)
+        }));
+        Commands {
+            commands: HashMap::new()
+        }
+    }
+
+    pub fn execute_str(& self, sport: &mut SPort, name: &str, reqstr: &str) -> CmdResult<()> {
+        match self.commands.get(name) {
+            Option::None => Result::Err(app_error("Unknown command")),
+            Option::Some(cmdf) => cmdf(sport, reqstr)
+        }
     }
 }
 
+
 fn execute<I, O>(
-    sport: &mut Box<dyn SerialPort>,
+    sport: &mut SPort,
     req: &Request<I, O>,
     reqstr: &str,
 ) -> CmdResult<()>
@@ -38,9 +78,9 @@ where
     O: DeserializeOwned + Serialize,
 {
     let req_value: I = serde_json::from_str(reqstr)?;
-    write_request(sport, req, &req_value)?;
+    write_request(sport, &req, &req_value)?;
 
-    let resp_value: O = read_response(sport, req)?;
+    let resp_value: O = read_response(sport, &req)?;
     format!("result = {}", serde_json::to_string(&resp_value)?);
     Result::Ok(())
 }
@@ -50,7 +90,7 @@ const REQ_TAIL_SIZE: usize = size_of::<u8>() + 2 * size_of::<u16>();
 type MaxValueSize = U11;
 
 fn write_request<I, O>(
-    sport: &mut Box<dyn SerialPort>,
+    sport: &mut SPort,
     req: &Request<I, O>,
     req_value: &I,
 ) -> CmdResult<()>
@@ -82,7 +122,7 @@ where
 const RESP_HEADER_SIZE: usize = size_of::<u8>() + size_of::<u16>();
 const RESP_TAIL_SIZE: usize = size_of::<u8>() + size_of::<u16>();
 
-fn read_response<I, O>(sport: &mut Box<dyn SerialPort>, _req: &Request<I, O>) -> CmdResult<O>
+fn read_response<I, O>(sport: &mut SPort, _req: &Request<I, O>) -> CmdResult<O>
 where
     O: DeserializeOwned,
 {

@@ -30,10 +30,12 @@ fn main() {
     let mut sport = serialport::open_with_settings("/dev/ttyUSB0", &sport_settings)
         .expect("Failed to open serial port");
 
+    let cmds = commands::Commands::new();
+
     match app_m.subcommand() {
         ("cmd", Some(sub_m)) => {
             if let (Some(name), Some(value)) = (sub_m.value_of("name"), sub_m.value_of("value")) {
-                match commands::execute_str(&mut sport, name, value) {
+                match cmds.execute_str(&mut sport, name, value) {
                     Result::Ok(_) => (),
                     Result::Err(err) => println!("Error: {}", err),
                 }
